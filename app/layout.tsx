@@ -1,12 +1,12 @@
 import "./globals.css";
 import Header from "./header";
 
-import { Inter, Geist } from 'next/font/google'
-import { cn } from "@/lib/utils";
+import { inter, geologica } from "@/lib/fonts";
+import { ThemeProvider } from "@/components/darkmode/themeprovider";
+import Footer from "./footer";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
-const inter = Inter({ subsets: ['latin'] })
+
 
 export default function RootLayout({
   children,
@@ -14,10 +14,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className={cn("font-sans", geist.variable)}>
-      <body className={inter.className}>
-        <Header />
-        {children}
+    <html lang='en' suppressHydrationWarning>
+      <body className={`${inter.className} pt-[65px] overflow-x-hidden`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Header />
+          {children}
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );
