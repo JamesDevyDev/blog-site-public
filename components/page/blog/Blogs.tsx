@@ -16,6 +16,7 @@ const Blogs = async () => {
     const { data, error } = await supabase
         .from('blogs')
         .select('id ,title, type, created_at')
+        .order('created_at', { ascending: false })
         .returns<Blog[]>()
 
     return (

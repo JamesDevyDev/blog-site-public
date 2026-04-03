@@ -1,6 +1,8 @@
 import { geologica, alegreyna } from "@/lib/fonts"
-
 import type { Metadata } from "next"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Suspense } from "react"
+import PhotosComponent from "@/components/page/photos/PhotosComponent"
 
 export const metadata: Metadata = {
     title: "Photos — James",
@@ -8,7 +10,7 @@ export const metadata: Metadata = {
 
 const page = () => {
     return (
-        <div className="bg-[#f0f2f4] dark:bg-[#151718] min-h-screen px-4">
+        <div className="bg-[#f0f2f4] dark:bg-[#151718] min-h-screen px-10">
             <div className="max-w-xl w-full mx-auto pt-10 flex flex-col gap-8 pb-16">
 
                 <div className="text-center">
@@ -20,7 +22,18 @@ const page = () => {
                     </p>
                 </div>
 
-            
+                <Suspense fallback={
+                    <div className="columns-2 gap-3">
+                        {Array.from({ length: 10 }).map((_, i) => (
+                            <div key={i} className="break-inside-avoid mb-3">
+                                <Skeleton className="w-full rounded-xl h-[200px]" />
+                            </div>
+                        ))}
+                    </div>
+                }>
+                    <PhotosComponent />
+                </Suspense>
+
             </div>
         </div>
     )

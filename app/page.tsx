@@ -11,7 +11,7 @@ const ArrowUpRight = () => (
 
 const page = async () => {
   return (
-    <div className="bg-[#f0f2f4] dark:bg-[#151718] min-h-screen px-4">
+    <div className="bg-[#f0f2f4] dark:bg-[#151718] min-h-screen px-10  ">
       <div className="max-w-xl w-full mx-auto pt-16 flex flex-col gap-10">
 
         <section>

@@ -1,7 +1,8 @@
 'use client'
 import Link from "next/link"
 import { ModeToggle } from "@/components/darkmode/lightmode"
-import { ChevronDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ChevronDown, Home } from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,11 +15,16 @@ const navLinkClass = 'text-bg  hover:text-foreground hover:bg-muted rounded-sm p
 
 const Header = () => {
     return (
-        <div className='dark:bg-[#1a1d1e] bg-[#ffffff] w-full h-[65px] fixed top-0 left-0 border-b flex items-center px-4'>
+        <div className='dark:bg-[#1a1d1e] bg-[#ffffff] w-full h-[65px] fixed top-0 left-0 border-b flex items-center px-10'>
             <div className='max-w-xl w-full mx-auto flex items-center justify-between'>
 
-                <Link href='/' className='bg-[#2a2d2e] w-[40px] h-[40px] rounded-full overflow-hidden cursor-pointer'>
-                    <img src='/pfp.png' className='w-full h-full' />
+                <Link href='/' className='rounded-[100%]  flex items-center justify-center'>
+                    <Button
+                        className='rounded-[100%] cursor-pointer h-[40px] w-[40px] relative'
+                        variant="outline"
+                    >
+                        <Home className='w-3.5 h-3.5' />
+                    </Button>
                 </Link>
 
                 <div className='flex items-center h-[65px]'>

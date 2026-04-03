@@ -11,12 +11,12 @@ const likes = [
     "Bianca", "Programming", "Crime Documentaries", "Crypto", "Gym",
     "NextJS", "Side projects", "Bad Jokes", "Reddit", "Animes",
     "Ramen", "Samgyupsal", "Stoicism", "Meditation", "Honey Butter",
-    "Baths"
+    "Baths","Guitar", "Rubiks Cube"
 ]
 
 const dislikes = [
     "Strong Beliefs", "Ads", "Narrow-minded",
-    "Group Chats", "Politics", "Bad cable management", "Sleeping in"
+    "Group Chats", "Strong Politics"
 ]
 
 const Tag = ({ label, like }: { label: string, like: boolean }) => (
@@ -27,7 +27,7 @@ const Tag = ({ label, like }: { label: string, like: boolean }) => (
 
 const page = () => {
     return (
-        <div className="bg-[#f0f2f4] dark:bg-[#151718] min-h-screen px-4">
+        <div className="bg-[#f0f2f4] dark:bg-[#151718] min-h-screen px-10">
             <div className="max-w-xl w-full mx-auto pt-10 flex flex-col gap-8 pb-16">
 
                 {/* About */}
@@ -38,8 +38,8 @@ const page = () => {
                         <p>In my free time, you can usually find me watching anime, coding, playing guitar, riding outside with the motorcycle or
                             simply spending time with those closest to me.</p>
                         <p>
-                            I'm an advocate for working and learning in public. Its on{" "}
-                            <Link href="https://github.com/jamesdevydev" className="text-blue-500 hover:underline">Github</Link>.
+                            I'm an advocate for working and learning in public. Its on my{" "}
+                            <Link href="https://github.com/jamesdevydev" className="text-blue-500 hover:underline">Github</Link>!
                         </p>
                     </div>
                 </section>
