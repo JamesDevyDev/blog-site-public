@@ -11,6 +11,7 @@ const ArrowUpRight = () => (
 
 const page = async () => {
   const res = await fetch('https://api.visitorbadge.io/api/visitors?path=github.com%2Fblog-jamestalamo.com')
+  // Site counter
 
   return (
     <div className="bg-[#f0f2f4] dark:bg-[#151718] min-h-screen px-10  ">
