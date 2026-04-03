@@ -23,6 +23,7 @@ type Photo = {
 const AdminPage = () => {
     const [activeTab, setActiveTab] = useState<"blog" | "photo">("blog")
 
+
     // Blog state
     const [title, setTitle] = useState("")
     const [type, setType] = useState("")
@@ -39,6 +40,10 @@ const AdminPage = () => {
     const [dragOver, setDragOver] = useState(false)
     const [photoLoading, setPhotoLoading] = useState(false)
     const [photos, setPhotos] = useState<Photo[]>([])
+
+    // Add this to your state
+    const [uploadError, setUploadError] = useState<string | null>(null)
+    const [uploadSuccess, setUploadSuccess] = useState(false)
 
     const fetchBlogs = async () => {
         const { data } = await supabase
@@ -92,25 +97,59 @@ const AdminPage = () => {
     const handlePhotoSubmit = async () => {
         if (!photo) return
         setPhotoLoading(true)
+        setUploadError(null)
+        setUploadSuccess(false)
 
         try {
+            const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+            const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+
+            if (!cloudName || !uploadPreset) {
+                setUploadError("Missing Cloudinary config. Check your .env.local file.")
+                setPhotoLoading(false)
+                return
+            }
+
             const formData = new FormData()
             formData.append("file", photo)
-            formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!)
-            formData.append("cloud_name", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!)
+            formData.append("upload_preset", uploadPreset)
+            formData.append("cloud_name", cloudName)
 
             const res = await fetch(
-                `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
                 { method: "POST", body: formData }
             )
             const cloudData = await res.json()
-            console.log("Cloudinary response:", cloudData) // Add this
 
-            await supabase.from("photos").insert({ url: cloudData.secure_url })
+            if (cloudData.error) {
+                setUploadError(`Cloudinary error: ${cloudData.error.message}`)
+                setPhotoLoading(false)
+                return
+            }
+
+            if (!cloudData.secure_url) {
+                setUploadError("Upload succeeded but no URL was returned.")
+                setPhotoLoading(false)
+                return
+            }
+
+            const { error: supabaseError } = await supabase
+                .from("photos")
+                .insert({ url: cloudData.secure_url })
+
+            if (supabaseError) {
+                setUploadError(`Supabase error: ${supabaseError.message}`)
+                setPhotoLoading(false)
+                return
+            }
+
             await fetchPhotos()
             setPhoto(null)
-        } catch (err) {
-            console.error("Upload failed:", err)
+            setUploadSuccess(true)
+            setTimeout(() => setUploadSuccess(false), 3000)
+
+        } catch (err: any) {
+            setUploadError(`Unexpected error: ${err?.message ?? "Unknown"}`)
         }
 
         setPhotoLoading(false)
@@ -176,12 +215,20 @@ const AdminPage = () => {
                             />
 
                             <Button
-                                onClick={handleBlogSubmit}
-                                disabled={blogLoading || !title || !type || !content}
+                                onClick={handlePhotoSubmit}
+                                disabled={photoLoading || !photo}
                                 className="w-full cursor-pointer"
                             >
-                                {blogLoading ? "Publishing..." : "Publish"}
+                                {photoLoading ? "Uploading..." : "Upload Photo"}
                             </Button>
+
+                            {/* Error / Success messages */}
+                            {uploadError && (
+                                <p className="text-sm text-red-500 text-center">{uploadError}</p>
+                            )}
+                            {uploadSuccess && (
+                                <p className="text-sm text-green-500 text-center">Photo uploaded successfully!</p>
+                            )}
                         </div>
 
                         {/* Blog List */}
