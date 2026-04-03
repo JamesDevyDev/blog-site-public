@@ -1,8 +1,23 @@
+import type { Metadata } from "next"
 
 import { geologica, alegreyna } from "@/lib/fonts"
 import { supabase } from "@/lib/supabase"
 import { timeAgo } from "@/lib/reusable/time"
 import Link from "next/link"
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+    const { id } = await params
+
+    const { data: blog } = await supabase
+        .from('blogs')
+        .select('title')
+        .eq('id', id)
+        .single()
+
+    return {
+        title: blog?.title ?? "Blog — James",
+    }
+}
 
 const IdPage = async ({ params }: { params: { id: string } }) => {
     const { id } = await params
@@ -21,11 +36,10 @@ const IdPage = async ({ params }: { params: { id: string } }) => {
 
                 <div className="flex flex-col gap-4">
 
-                    {/* author + date row */}
                     <div className="flex items-center justify-between pb-4">
                         <div className="flex items-center gap-2">
                             <Link href='/'>
-                                <img src='/pfp.png' className="w-[40px] h-[40px] rounded-full bg-gray-400" /> {/* avatar placeholder */}
+                                <img src='/pfp.png' className="w-[40px] h-[40px] rounded-full bg-gray-400" />
                             </Link>
                             <div>
                                 <Link href='/'>
@@ -40,7 +54,6 @@ const IdPage = async ({ params }: { params: { id: string } }) => {
                         {blog.title}
                     </h1>
 
-                    {/* content */}
                     <p className={`${alegreyna.className} text-gray-700 dark:text-gray-300 text-2xl leading-relaxed`}>
                         {blog.content}
                     </p>

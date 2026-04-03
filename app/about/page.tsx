@@ -1,6 +1,12 @@
 import { geologica, alegreyna } from "@/lib/fonts"
 import Link from "next/link"
 
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+    title: "About — James",
+}
+
 const likes = [
     "Bianca", "Programming", "Crime Documentaries", "Crypto", "Gym",
     "NextJS", "Side projects", "Bad Jokes", "Reddit", "Animes",

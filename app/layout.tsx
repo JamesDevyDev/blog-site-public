@@ -4,9 +4,14 @@ import Header from "./header";
 import { inter, geologica } from "@/lib/fonts";
 import { ThemeProvider } from "@/components/darkmode/themeprovider";
 import Footer from "./footer";
+import type { Metadata } from "next"
 
-
-
+export const metadata: Metadata = {
+  title: "James Patrick Talamo",
+  icons: {
+    icon: "/pfp.png",
+  }
+}
 
 export default function RootLayout({
   children,

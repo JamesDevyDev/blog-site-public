@@ -2,6 +2,12 @@ import Blogs from "@/components/page/blog/Blogs"
 import { geologica, alegreyna } from "@/lib/fonts"
 import { Suspense } from "react"
 
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+    title: "About — Blog",
+}
+
 const page = () => {
     return (
         <div className="bg-[#f0f2f4] dark:bg-[#151718] min-h-screen px-4">
