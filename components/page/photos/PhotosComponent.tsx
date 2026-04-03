@@ -1,6 +1,9 @@
 import { supabase } from "@/lib/supabase"
+import { unstable_noStore as noStore } from "next/cache"
 
 const PhotosComponent = async () => {
+    noStore()
+
     const { data: photos } = await supabase
         .from("photos")
         .select("id, url, created_at")
