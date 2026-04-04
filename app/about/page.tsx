@@ -1,5 +1,7 @@
 import { geologica, alegreyna } from "@/lib/fonts"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase"
+import { unstable_noStore as noStore } from "next/cache"
 
 import type { Metadata } from "next"
 
@@ -7,32 +9,27 @@ export const metadata: Metadata = {
     title: "About — James",
 }
 
-const likes = [
-    "Bianca", "Programming", "Crime Documentaries", "Crypto", "Gym",
-    "NextJS", "Side projects", "Bad Jokes", "Reddit", "Animes",
-    "Ramen", "Samgyupsal", "Stoicism", "Meditation", "Honey Butter",
-    "Baths","Guitar", "Rubiks Cube"
-]
-
-const dislikes = [
-    "Strong Beliefs", "Ads", "Narrow-minded",
-    "Group Chats", "Strong Politics"
-]
-
 const Tag = ({ label, like }: { label: string, like: boolean }) => (
-    <span className={`${like === true ? "bg-green-400/30 text-green-800 dark:text-green-400" : "bg-red-400/30 text-red-800 dark:text-red-400"} font-semibold text-xs px-3 py-2 rounded-sm`}>
+    <span className={`${like ? "bg-green-400/30 text-green-800 dark:text-green-400" : "bg-red-400/30 text-red-800 dark:text-red-400"} font-semibold text-xs px-3 py-2 rounded-sm`}>
         {label}
     </span>
 )
 
-const page = () => {
+const page = async () => {
+    noStore()
+
+    const [{ data: likes }, { data: dislikes }] = await Promise.all([
+        supabase.from("likes").select("id, value").order("created_at", { ascending: true }),
+        supabase.from("dislikes").select("id, value").order("created_at", { ascending: true }),
+    ])
+
     return (
         <div className="bg-[#f0f2f4] dark:bg-[#151718] min-h-screen px-10">
             <div className="max-w-xl w-full mx-auto pt-10 flex flex-col gap-8 pb-16">
 
                 {/* About */}
                 <section>
-                    <h1 className={`${geologica.className} text-3xl font-bold dark:text-white mb-1`}>About me </h1>
+                    <h1 className={`${geologica.className} text-3xl font-bold dark:text-white mb-1`}>About me</h1>
                     <div className={`${alegreyna.className} text-2xl leading-relaxed text-gray-700 dark:text-gray-300 flex flex-col gap-3`}>
                         <p>I'm an all-around curious person who can't get enough of exploring new ideas and asking lots of questions.</p>
                         <p>In my free time, you can usually find me watching anime, coding, playing guitar, riding outside with the motorcycle or
@@ -45,23 +42,23 @@ const page = () => {
                 </section>
 
                 {/* Like */}
-                <section className='pt-4'>
+                <section className="pt-4">
                     <h2 className={`${geologica.className} text-3xl font-bold dark:text-white mb-3`}>Like 😄</h2>
                     <div className="flex flex-wrap gap-2">
-                        {likes.map(tag => <Tag key={tag} label={tag} like={true} />)}
+                        {likes?.map((tag) => <Tag key={tag.id} label={tag.value} like={true} />)}
                     </div>
                 </section>
 
                 {/* Dislike */}
-                <section className='pt-4'>
+                <section className="pt-4">
                     <h2 className={`${geologica.className} text-3xl font-bold dark:text-white mb-3`}>Dislike 😒</h2>
                     <div className="flex flex-wrap gap-2">
-                        {dislikes.map(tag => <Tag key={tag} label={tag} like={false} />)}
+                        {dislikes?.map((tag) => <Tag key={tag.id} label={tag.value} like={false} />)}
                     </div>
                 </section>
 
-                {/* About this page */}
-                <section className='pt-4'>
+                {/* About this site */}
+                <section className="pt-4">
                     <h2 className={`${geologica.className} text-3xl font-bold dark:text-white mb-2`}>About this site</h2>
                     <p className={`${alegreyna.className} text-2xl text-gray-700 dark:text-gray-400 leading-relaxed`}>
                         Everything you see here I have designed and built myself. The website is using{" "}

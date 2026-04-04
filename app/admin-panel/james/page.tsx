@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/lib/supabase"
-import { Pencil, Trash2, X, Check } from "lucide-react"
+import { Pencil, Trash2, X, Check, ThumbsUp, ThumbsDown } from "lucide-react"
 
 type Blog = {
     id: string
@@ -20,9 +20,14 @@ type Photo = {
     url: string
 }
 
-const AdminPage = () => {
-    const [activeTab, setActiveTab] = useState<"blog" | "photo">("blog")
+type Reaction = {
+    id: number
+    value: string
+    created_at: string
+}
 
+const AdminPage = () => {
+    const [activeTab, setActiveTab] = useState<"blog" | "photo" | "reactions">("blog")
 
     // Blog state
     const [title, setTitle] = useState("")
@@ -40,10 +45,17 @@ const AdminPage = () => {
     const [dragOver, setDragOver] = useState(false)
     const [photoLoading, setPhotoLoading] = useState(false)
     const [photos, setPhotos] = useState<Photo[]>([])
-
-    // Add this to your state
     const [uploadError, setUploadError] = useState<string | null>(null)
     const [uploadSuccess, setUploadSuccess] = useState(false)
+
+    // Reaction state
+    const [likes, setLikes] = useState<Reaction[]>([])
+    const [dislikes, setDislikes] = useState<Reaction[]>([])
+    const [likeInput, setLikeInput] = useState("")
+    const [dislikeInput, setDislikeInput] = useState("")
+    const [editingReactionId, setEditingReactionId] = useState<number | null>(null)
+    const [editingReactionTable, setEditingReactionTable] = useState<"likes" | "dislikes" | null>(null)
+    const [editingReactionValue, setEditingReactionValue] = useState("")
 
     const fetchBlogs = async () => {
         const { data } = await supabase
@@ -61,9 +73,19 @@ const AdminPage = () => {
         if (data) setPhotos(data)
     }
 
+    const fetchReactions = async () => {
+        const [{ data: likesData }, { data: dislikesData }] = await Promise.all([
+            supabase.from("likes").select("id, value, created_at").order("created_at", { ascending: false }),
+            supabase.from("dislikes").select("id, value, created_at").order("created_at", { ascending: false }),
+        ])
+        if (likesData) setLikes(likesData)
+        if (dislikesData) setDislikes(dislikesData)
+    }
+
     useEffect(() => {
         fetchBlogs()
         fetchPhotos()
+        fetchReactions()
     }, [])
 
     const handleBlogSubmit = async () => {
@@ -147,7 +169,6 @@ const AdminPage = () => {
             setPhoto(null)
             setUploadSuccess(true)
             setTimeout(() => setUploadSuccess(false), 3000)
-
         } catch (err: any) {
             setUploadError(`Unexpected error: ${err?.message ?? "Unknown"}`)
         }
@@ -158,6 +179,78 @@ const AdminPage = () => {
     const handlePhotoDelete = async (id: number) => {
         await supabase.from("photos").delete().eq("id", id)
         setPhotos((prev) => prev.filter((p) => p.id !== id))
+    }
+
+    const handleAddReaction = async (table: "likes" | "dislikes") => {
+        const value = table === "likes" ? likeInput.trim() : dislikeInput.trim()
+        if (!value) return
+        await supabase.from(table).insert({ value })
+        if (table === "likes") setLikeInput("")
+        else setDislikeInput("")
+        await fetchReactions()
+    }
+
+    const handleReactionDelete = async (table: "likes" | "dislikes", id: number) => {
+        await supabase.from(table).delete().eq("id", id)
+        if (table === "likes") setLikes((prev) => prev.filter((r) => r.id !== id))
+        else setDislikes((prev) => prev.filter((r) => r.id !== id))
+    }
+
+    const handleReactionEditSave = async () => {
+        if (!editingReactionId || !editingReactionTable || !editingReactionValue.trim()) return
+        await supabase.from(editingReactionTable).update({ value: editingReactionValue.trim() }).eq("id", editingReactionId)
+        setEditingReactionId(null)
+        setEditingReactionTable(null)
+        setEditingReactionValue("")
+        await fetchReactions()
+    }
+
+    const ReactionTag = ({ r, table }: { r: Reaction, table: "likes" | "dislikes" }) => {
+        const isEditing = editingReactionId === r.id && editingReactionTable === table
+        const isLike = table === "likes"
+
+        if (isEditing) {
+            return (
+                <div className="flex items-center gap-1.5">
+                    <Input
+                        value={editingReactionValue}
+                        onChange={(e) => setEditingReactionValue(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleReactionEditSave()}
+                        className="h-8 text-sm dark:bg-[#151718] dark:border-[#2a2d2e]"
+                        autoFocus
+                    />
+                    <button onClick={handleReactionEditSave} className="text-green-400 hover:text-green-300 transition-colors cursor-pointer">
+                        <Check className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => { setEditingReactionId(null); setEditingReactionTable(null); setEditingReactionValue("") }} className="text-gray-400 hover:text-white transition-colors cursor-pointer">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )
+        }
+
+        return (
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border
+                ${isLike
+                    ? "bg-green-900/40 text-green-400 border-green-800"
+                    : "bg-red-900/40 text-red-400 border-red-800"
+                }`}
+            >
+                <span>{r.value}</span>
+                <button
+                    onClick={() => { setEditingReactionId(r.id); setEditingReactionTable(table); setEditingReactionValue(r.value) }}
+                    className="hover:text-white transition-colors cursor-pointer"
+                >
+                    <Pencil className="w-3 h-3" />
+                </button>
+                <button
+                    onClick={() => handleReactionDelete(table, r.id)}
+                    className="hover:text-white transition-colors cursor-pointer"
+                >
+                    <X className="w-3 h-3" />
+                </button>
+            </div>
+        )
     }
 
     return (
@@ -171,7 +264,7 @@ const AdminPage = () => {
 
                 {/* Tabs */}
                 <div className="flex gap-2 bg-white dark:bg-[#1e2021] p-1 rounded-xl w-fit">
-                    {(["blog", "photo"] as const).map((tab) => (
+                    {(["blog", "photo", "reactions"] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -191,21 +284,18 @@ const AdminPage = () => {
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col gap-4 bg-white dark:bg-[#1e2021] p-6 rounded-2xl">
                             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">New Blog Post</h2>
-
                             <Input
                                 placeholder="Title"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 className="dark:bg-[#151718] dark:border-[#2a2d2e]"
                             />
-
                             <Input
                                 placeholder="Type (e.g. essay, note, update)"
                                 value={type}
                                 onChange={(e) => setType(e.target.value)}
                                 className="dark:bg-[#151718] dark:border-[#2a2d2e]"
                             />
-
                             <Textarea
                                 placeholder="Content"
                                 value={content}
@@ -213,32 +303,18 @@ const AdminPage = () => {
                                 rows={8}
                                 className="dark:bg-[#151718] dark:border-[#2a2d2e] resize-none"
                             />
-
                             <Button
-                                onClick={handlePhotoSubmit}
-                                disabled={photoLoading || !photo}
+                                onClick={handleBlogSubmit}
+                                disabled={blogLoading || !title || !type || !content}
                                 className="w-full cursor-pointer"
                             >
-                                {photoLoading ? "Uploading..." : "Upload Photo"}
+                                {blogLoading ? "Posting..." : "Post Blog"}
                             </Button>
-
-                            {/* Error / Success messages */}
-                            {uploadError && (
-                                <p className="text-sm text-red-500 text-center">{uploadError}</p>
-                            )}
-                            {uploadSuccess && (
-                                <p className="text-sm text-green-500 text-center">Photo uploaded successfully!</p>
-                            )}
                         </div>
 
-                        {/* Blog List */}
                         <div className="flex flex-col gap-3">
                             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">All Posts</h2>
-
-                            {blogs.length === 0 && (
-                                <p className="text-sm text-gray-400">No posts yet.</p>
-                            )}
-
+                            {blogs.length === 0 && <p className="text-sm text-gray-400">No posts yet.</p>}
                             {blogs.map((blog) => (
                                 <div key={blog.id} className="bg-white dark:bg-[#1e2021] rounded-2xl p-4 flex flex-col gap-3">
                                     {editingId === blog.id ? (
@@ -299,11 +375,8 @@ const AdminPage = () => {
                 {/* Photo Tab */}
                 {activeTab === "photo" && (
                     <div className="flex flex-col gap-6">
-
-                        {/* Upload Card */}
                         <div className="flex flex-col gap-4 bg-white dark:bg-[#1e2021] p-6 rounded-2xl">
                             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">New Photo</h2>
-
                             <div
                                 onDrop={handlePhotoDrop}
                                 onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
@@ -327,7 +400,6 @@ const AdminPage = () => {
                                     </div>
                                 )}
                             </div>
-
                             <input
                                 id="photo-input"
                                 type="file"
@@ -338,7 +410,6 @@ const AdminPage = () => {
                                     if (file) setPhoto(file)
                                 }}
                             />
-
                             <Button
                                 onClick={handlePhotoSubmit}
                                 disabled={photoLoading || !photo}
@@ -346,28 +417,83 @@ const AdminPage = () => {
                             >
                                 {photoLoading ? "Uploading..." : "Upload Photo"}
                             </Button>
+                            {uploadError && <p className="text-sm text-red-500 text-center">{uploadError}</p>}
+                            {uploadSuccess && <p className="text-sm text-green-500 text-center">Photo uploaded successfully!</p>}
                         </div>
 
-                        {/* Photo List */}
                         <div className="flex flex-col gap-3">
                             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">All Photos</h2>
-
-                            {photos.length === 0 && (
-                                <p className="text-sm text-gray-400">No photos yet.</p>
-                            )}
-
+                            {photos.length === 0 && <p className="text-sm text-gray-400">No photos yet.</p>}
                             <div className="columns-2 gap-3">
                                 {photos.map((p) => (
                                     <div key={p.id} className="break-inside-avoid mb-3 relative group overflow-hidden rounded-xl">
                                         <img src={p.url} className="w-full object-cover" />
                                         <button
                                             onClick={() => handlePhotoDelete(p.id)}
-                                            className="absolute top-2 right-2 bg-black/60 hover:bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                                            className="absolute top-2 right-2 bg-black/60 hover:bg-red-500 text-white rounded-full p-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all cursor-pointer"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Reactions Tab */}
+                {activeTab === "reactions" && (
+                    <div className="flex flex-col gap-6">
+
+                        {/* Likes */}
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <ThumbsUp className="w-4 h-4 text-green-500" />
+                                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">
+                                    Likes <span className="text-green-500">{likes.length}</span>
+                                </h2>
+                            </div>
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="e.g. Programming"
+                                    value={likeInput}
+                                    onChange={(e) => setLikeInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && handleAddReaction("likes")}
+                                    className="dark:bg-[#151718] dark:border-[#2a2d2e]"
+                                />
+                                <Button onClick={() => handleAddReaction("likes")} disabled={!likeInput.trim()} className="cursor-pointer shrink-0">
+                                    Add
+                                </Button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {likes.length === 0 && <p className="text-sm text-gray-400">No likes yet.</p>}
+                                {likes.map((r) => <ReactionTag key={r.id} r={r} table="likes" />)}
+                            </div>
+                        </div>
+
+                        {/* Dislikes */}
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <ThumbsDown className="w-4 h-4 text-red-500" />
+                                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">
+                                    Dislikes <span className="text-red-500">{dislikes.length}</span>
+                                </h2>
+                            </div>
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="e.g. Ads"
+                                    value={dislikeInput}
+                                    onChange={(e) => setDislikeInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && handleAddReaction("dislikes")}
+                                    className="dark:bg-[#151718] dark:border-[#2a2d2e]"
+                                />
+                                <Button onClick={() => handleAddReaction("dislikes")} disabled={!dislikeInput.trim()} variant="destructive" className="cursor-pointer shrink-0">
+                                    Add
+                                </Button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {dislikes.length === 0 && <p className="text-sm text-gray-400">No dislikes yet.</p>}
+                                {dislikes.map((r) => <ReactionTag key={r.id} r={r} table="dislikes" />)}
                             </div>
                         </div>
 
